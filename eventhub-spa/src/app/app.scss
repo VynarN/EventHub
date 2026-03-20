@@ -1,0 +1,48 @@
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #0d47a1;
+  text-decoration: none;
+}
+
+.app-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.app-header nav a {
+  color: #1565c0;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.app-header nav a:hover {
+  text-decoration: underline;
+}
+
+.app-main {
+  flex: 1;
+}

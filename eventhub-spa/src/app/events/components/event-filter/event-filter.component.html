@@ -1,0 +1,25 @@
+<section class="event-filter" aria-labelledby="event-filter-heading">
+  <h2 id="event-filter-heading" class="event-filter__title">Filters</h2>
+  <form [formGroup]="form" class="event-filter__form" novalidate>
+    <div class="field">
+      <label for="filter-type">Type</label>
+      <select id="filter-type" formControlName="type">
+        @for (opt of typeOptions; track opt.label) {
+          <option [ngValue]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="filter-userId">User ID</label>
+      <input id="filter-userId" type="text" formControlName="userId" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="filter-created-from">Created from</label>
+      <input id="filter-created-from" type="datetime-local" formControlName="createdFrom" />
+    </div>
+    <div class="field">
+      <label for="filter-created-to">Created to</label>
+      <input id="filter-created-to" type="datetime-local" formControlName="createdTo" />
+    </div>
+  </form>
+</section>

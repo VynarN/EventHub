@@ -1,0 +1,6 @@
+.env
+**/bin/
+**/obj/
+eventhub-spa/node_modules/
+eventhub-spa/dist/
+eventhub-spa/.angular/

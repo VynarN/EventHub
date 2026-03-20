@@ -1,0 +1,43 @@
+<section class="event-create" aria-labelledby="event-create-heading">
+  <h1 id="event-create-heading">Create event</h1>
+  <p class="lead">Submit a new event to EventHub.</p>
+
+  @if (successMessage(); as msg) {
+    <p class="banner banner--success" role="status">{{ msg }}</p>
+  }
+  @if (submitError(); as err) {
+    <p class="banner banner--error" role="alert">{{ err }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="field">
+      <label for="userId">User ID</label>
+      <input id="userId" type="text" formControlName="userId" autocomplete="username" />
+      @if (form.controls.userId.invalid && form.controls.userId.touched) {
+        <span class="field-error">User ID is required.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="type">Type</label>
+      <select id="type" formControlName="type">
+        <option [ngValue]="null" disabled>Select a type</option>
+        @for (opt of typeOptions; track opt.value) {
+          <option [ngValue]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+      @if (form.controls.type.invalid && form.controls.type.touched) {
+        <span class="field-error">Type is required.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" formControlName="description" rows="4"></textarea>
+    </div>
+
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Submitting…' : 'Create event' }}
+    </button>
+  </form>
+</section>

@@ -1,0 +1,105 @@
+<section class="event-list" aria-labelledby="event-list-heading">
+  <h1 id="event-list-heading">Events</h1>
+  <p class="lead">Browse events. Adjust filters to narrow results.</p>
+
+  <app-event-filter />
+
+  @if (loadError(); as err) {
+    <p class="banner banner--error" role="alert">{{ err }}</p>
+  }
+
+  @if (loading()) {
+    <p class="status" role="status">Loading events…</p>
+  }
+
+  @if (!loading() && pageSummary(); as summary) {
+    <p class="summary">{{ summary }}</p>
+  }
+
+  <nav class="pager" aria-label="Event list pagination">
+    <label class="page-size">
+      <span class="page-size__label">Rows per page</span>
+      <select
+        class="page-size__select"
+        [value]="pageSize()"
+        (change)="onPageSizeSelect(($any($event.target).value))"
+        [disabled]="loading()"
+      >
+        @for (opt of pageSizeOptions; track opt) {
+          <option [value]="opt">{{ opt }}</option>
+        }
+      </select>
+    </label>
+    <div class="pager__buttons">
+      <button
+        type="button"
+        class="pager__btn"
+        aria-label="First page"
+        (click)="goFirst()"
+        [disabled]="!canGoPrev() || loading()"
+      >
+        First
+      </button>
+      <button
+        type="button"
+        class="pager__btn"
+        aria-label="Previous page"
+        (click)="goPrev()"
+        [disabled]="!canGoPrev() || loading()"
+      >
+        Previous
+      </button>
+      <span class="pager__status" aria-live="polite">
+        Page {{ pageNumber() }} of {{ totalPages() }}
+      </span>
+      <button
+        type="button"
+        class="pager__btn"
+        aria-label="Next page"
+        (click)="goNext()"
+        [disabled]="!canGoNext() || loading()"
+      >
+        Next
+      </button>
+      <button
+        type="button"
+        class="pager__btn"
+        aria-label="Last page"
+        (click)="goLast()"
+        [disabled]="!canGoNext() || loading()"
+      >
+        Last
+      </button>
+    </div>
+  </nav>
+
+  <div class="table-wrap" role="region" aria-label="Event list" tabindex="0">
+    <table class="data-grid">
+      <thead>
+        <tr>
+          <th scope="col">Id</th>
+          <th scope="col">User ID</th>
+          <th scope="col">Type</th>
+          <th scope="col">Description</th>
+          <th scope="col">Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ev of items(); track ev.id) {
+          <tr>
+            <td class="cell-id" [title]="ev.id">{{ ev.id }}</td>
+            <td>{{ ev.userId }}</td>
+            <td>{{ ev.type }}</td>
+            <td>{{ ev.description }}</td>
+            <td>{{ ev.createdAt | date: 'short' }}</td>
+          </tr>
+        }
+        @if (!loading() && items().length === 0) {
+          <tr>
+            <td colspan="5" class="empty-cell">No rows to display.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
