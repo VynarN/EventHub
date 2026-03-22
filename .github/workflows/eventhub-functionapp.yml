@@ -93,15 +93,11 @@ jobs:
           VAULT: ${{ vars.AZURE_KEY_VAULT_NAME }}
         run: bash .github/scripts/apply-functionapp-kv-settings.sh "$RG" "$APP" "$VAULT"
 
-      # After applying KV-referenced settings, the app must restart so the managed identity
-      # can resolve them. appsettings set triggers a soft recycle; an explicit restart ensures
-      # a clean worker startup with all settings resolved before trigger sync runs.
-      - name: Restart and sync triggers
+      # After applying KV-referenced settings, restart so the managed identity can resolve them.
+      # appsettings set triggers a soft recycle; an explicit restart ensures a clean worker
+      # startup with all settings resolved and triggers active.
+      - name: Restart
         run: |
           az functionapp restart \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --name "${{ vars.AZURE_FUNCTION_APP_NAME }}"
-          sleep 30
-          az functionapp sync-function-triggers \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --name "${{ vars.AZURE_FUNCTION_APP_NAME }}"
