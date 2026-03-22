@@ -12,7 +12,14 @@ public static class ServiceCollectionExtensions
         services.Configure<CosmosDbSettings>(configuration.GetSection(CosmosDbSettings.SectionName));
 
         var connectionString = configuration["CosmosDb:ConnectionString"];
-        if (string.IsNullOrWhiteSpace(connectionString))
+
+        // Reject unresolved Key Vault reference literals (e.g. "@Microsoft.KeyVault(SecretUri=...)").
+        // They are non-empty strings but not valid Cosmos connection strings; passing one to
+        // CosmosClient throws ArgumentException, crashing the worker process and causing 0 functions loaded.
+        var isValid = !string.IsNullOrWhiteSpace(connectionString)
+            && connectionString.Contains("AccountEndpoint=", StringComparison.OrdinalIgnoreCase);
+
+        if (!isValid)
         {
             services.AddSingleton<ICosmosEventWriter, NoOpCosmosEventWriter>();
             return services;
