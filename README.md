@@ -1,5 +1,7 @@
 # EventHub
 
+Deployed site: https://eh-dev-bff.azurewebsites.net/
+
 Local full-stack baseline: Angular SPA (`eventhub-spa`), .NET Web API (`EventHub.WebApi`), Azure Functions (`EventHub.FunctionApp`), plus Cosmos DB and Azure Service Bus emulators via Docker Compose.
 
 ## System architecture
@@ -142,3 +144,39 @@ If logs show **`Entity '...BufferQueue-1' was not found`** or SQL errors under *
 ---
 
 Cosmos DB Linux emulator: see [Linux-based emulator](https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux) for HTTPS and SDK notes (image tag may be `latest` or a documented preview).
+
+## Infrastructure with Terraform
+
+The `.infrastructure` directory contains Terraform configurations for deploying the EventHub application to Azure.
+
+- **`main.tf`**: Defines the Azure provider and global settings.
+- **`variables.tf`**: Contains input variables for the Terraform configuration.
+- **`outputs.tf`**: Defines output values from the Terraform deployment.
+- **`environments/dev`**: Contains environment-specific configurations for development.
+- **`environments/test`**: Contains environment-specific configurations for testing.
+- **`modules`**: Reusable Terraform modules for deploying individual Azure resources (e.g., Cosmos DB, Service Bus, Function App, Web API, BFF, Application Insights, Key Vault, Virtual Network, Resource Group, Subnets).
+
+To deploy the infrastructure, navigate to the desired environment directory (e.g., `.infrastructure/environments/dev`) and run the following commands:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+## CI/CD with GitHub Actions
+
+The `.github/workflows` directory contains GitHub Actions workflows for continuous integration and continuous deployment of the EventHub application.
+
+- **`eventhub-functionapp.yml`**: Workflow for building and deploying the Azure Function App.
+- **`eventhub-webapi.yml`**: Workflow for building and deploying the Web API.
+- **`eventhub-bff.yml`**: Workflow for building and deploying the BFF (Backend for Frontend).
+
+These workflows typically include steps for:
+
+1.  **Building** the .NET projects.
+2.  **Running tests**.
+3.  **Publishing** the build artifacts.
+4.  **Deploying** to Azure resources.
+
+Each workflow is triggered on pushes to the `main` branch and can be configured for other events as needed.
