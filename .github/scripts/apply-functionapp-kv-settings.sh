@@ -22,5 +22,6 @@ az functionapp config appsettings set \
   "FUNCTIONS_WORKER_RUNTIME=dotnet-isolated" \
   "CosmosDb__ConnectionString=$(kv_ref CosmosDb-ConnectionString)" \
   "ServiceBusConnection=$(kv_ref ServiceBus-ConnectionString)" \
+  "AzureWebJobsServiceBus=$(kv_ref ServiceBus-ConnectionString)" \
   "APPLICATIONINSIGHTS_CONNECTION_STRING=$(kv_ref ApplicationInsights-ConnectionString)" \
   "WEBSITE_VNET_ROUTE_ALL=1"

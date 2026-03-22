@@ -113,6 +113,15 @@ public sealed class CosmosDbInitializationHostedService : IHostedService
                     maxAttempts);
                 await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
             }
+            catch (Exception ex)
+            {
+                // Never fail host startup: Service Bus triggers must run even if Cosmos provisioning fails.
+                _logger.LogError(
+                    ex,
+                    "Cosmos database provisioning failed after {MaxAttempts} attempts; host continues without provisioning.",
+                    maxAttempts);
+                return;
+            }
         }
     }
 

@@ -34,7 +34,8 @@ jobs:
         run: |
           dotnet restore EventHub.FunctionApp/EventHub.FunctionApp.csproj
           dotnet test EventHub.FunctionApp.Tests/EventHub.FunctionApp.Tests.csproj -c Release --verbosity normal
-          dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -o "${{ github.workspace }}/publish"
+          # Windows Function App: must publish win-x64 from Linux agents or the host loads 0 functions (wrong apphost/native deps).
+          dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -r win-x64 --self-contained false -o "${{ github.workspace }}/publish"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -63,9 +64,9 @@ jobs:
 
       - uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: Zip release
         run: (cd publish && zip -r "$GITHUB_WORKSPACE/func.zip" .)
