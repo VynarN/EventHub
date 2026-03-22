@@ -78,6 +78,14 @@ jobs:
             --name "${{ vars.AZURE_FUNCTION_APP_NAME }}" \
             --src func.zip
 
+      # win-x64 zip + 32-bit worker = worker fails to start (0 functions). Terraform also sets this; enforce after deploy.
+      - name: Use 64-bit worker process
+        run: |
+          az functionapp config set \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_FUNCTION_APP_NAME }}" \
+            --use-32bit-worker-process false
+
       - name: Apply app settings (Key Vault references)
         env:
           RG: ${{ vars.AZURE_RESOURCE_GROUP }}

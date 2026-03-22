@@ -42,7 +42,12 @@ resource "azurerm_windows_function_app" "main" {
   }
 
   site_config {
+    # Non-HTTP triggers (Service Bus) need a continuously loaded worker on App Service plans; without Always On
+    # the site idles and the listener often stops even though the queue fills.
+    always_on              = true
     vnet_route_all_enabled = true
+    # Publish is win-x64; a 32-bit worker cannot load this layout (portal shows 0 functions / worker errors).
+    use_32_bit_worker = false
     application_stack {
       dotnet_version = "v8.0"
     }
