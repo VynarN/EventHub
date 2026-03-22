@@ -4,3 +4,17 @@
 eventhub-spa/node_modules/
 eventhub-spa/dist/
 eventhub-spa/.angular/
+# Copied from eventhub-spa dist by EventHub.BFF MSBuild target
+EventHub.BFF/wwwroot/
+
+# Terraform — never commit (providers exceed GitHub 100MB limit; state is sensitive)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
