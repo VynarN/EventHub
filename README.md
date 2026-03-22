@@ -6,15 +6,18 @@ Local full-stack baseline: Angular SPA (`eventhub-spa`), .NET Web API (`EventHub
 
 ## System architecture
 
-The solution follows an **API → queue → worker → database** path for writes, and **API → database** for reads.
+The solution's architecture, both locally via Docker Compose and when deployed to Azure via Terraform, follows a clear path for data flow and service interaction. The system includes a UI (Angular SPA), a Backend for Frontend (BFF), a Web API, Azure Functions, Cosmos DB, and Azure Service Bus.
 
 | Layer | Role |
 |--------|------|
 | **eventhub-spa** | Angular UI (dev server or container). |
+| **EventHub.BFF** | Backend For Frontend (BFF) responsible for handling communication with the Web API. |
 | **EventHub.WebApi** | REST API: `POST /api/events` publishes an “event created” message to Service Bus; `GET /api/events` lists events from Cosmos (paged, optional `type`, `userId`, and `createdFrom` / `createdTo` filters on `CreatedAt`, UTC). |
 | **EventHub.FunctionApp** | Service Bus trigger on queue `queue.1`; deserializes messages and upserts documents into the Cosmos **Events** container via shared `EventHub.Cosmos` types. |
 | **EventHub.Cosmos** | `CosmosClient` registration, database/container bootstrap, `CosmosEventWriter`, and document shape (partition key path **`/Id`**, aligned with event id). |
 | **Emulators (Compose)** | Linux Cosmos emulator (HTTPS gateway), Service Bus emulator (backed by Azure SQL Edge), plus optional Application Insights connection string from `.env`. |
+
+When deployed to Azure, the components are orchestrated within a Resource Group, Virtual Network, and subnets, utilizing Azure services like Cosmos DB, Service Bus, Application Insights, and Key Vault. The applications (Function App, Web API, BFF) are hosted on Azure App Services and integrate with Key Vault for secure configuration. The data flow for writes is typically **UI → BFF → API → Service Bus (queue) → Functions (worker) → Cosmos DB**, and for reads **UI → BFF → API → Cosmos DB**.
 
 ```mermaid
 flowchart LR
