@@ -1,0 +1,94 @@
+# Web API: build, test, deploy to dev/test after manual approval per environment.
+#
+# GitHub setup:
+# 1. Repository secrets (OIDC): AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# 2. Environments "dev" and "test": enable required reviewers (deployment protection).
+# 3. Per environment, add Variables:
+#    - AZURE_RESOURCE_GROUP   (e.g. eh-dev-rg)
+#    - AZURE_KEY_VAULT_NAME   (from Terraform output key_vault_name)
+#    - AZURE_WEBAPI_NAME      (Web API App Service, e.g. eh-dev-webapi — not the BFF or Function name)
+# 4. Azure: federated credential for this repo on the app registration used by AZURE_CLIENT_ID.
+# 5. Grant that identity Contributor (or Website Contributor) on the resource group / web app, and
+#    ensure app settings use Key Vault references applied below (script uses vault + secret names only).
+
+name: Web API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "EventHub.WebApi/**"
+      - "EventHub.Cosmos/**"
+      - "EventHub.WebApi.Tests/**"
+      - ".github/workflows/eventhub-webapi.yml"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: eventhub-webapi-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore, test, publish
+        run: |
+          dotnet restore EventHub.WebApi/EventHub.WebApi.csproj
+          dotnet test EventHub.WebApi.Tests/EventHub.WebApi.Tests.csproj -c Release --verbosity normal
+          dotnet publish EventHub.WebApi/EventHub.WebApi.csproj -c Release -o "${{ github.workspace }}/publish"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webapi-publish
+          path: publish/
+
+  deploy:
+    name: Deploy → ${{ matrix.environment }} (approval)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test]
+    environment: ${{ matrix.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: webapi-publish
+          path: publish
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Zip release
+        run: (cd publish && zip -r "$GITHUB_WORKSPACE/site.zip" .)
+
+      - name: Deploy to App Service
+        run: |
+          az webapp deployment source config-zip \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_WEBAPI_NAME }}" \
+            --src site.zip
+
+      - name: Apply app settings (Key Vault references)
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          APP: ${{ vars.AZURE_WEBAPI_NAME }}
+          VAULT: ${{ vars.AZURE_KEY_VAULT_NAME }}
+        run: bash .github/scripts/apply-webapi-app-service-kv-settings.sh "$RG" "$APP" "$VAULT"

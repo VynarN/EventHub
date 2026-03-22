@@ -4,3 +4,5 @@
 eventhub-spa/node_modules/
 eventhub-spa/dist/
 eventhub-spa/.angular/
+# Copied from eventhub-spa dist by EventHub.BFF MSBuild target
+EventHub.BFF/wwwroot/

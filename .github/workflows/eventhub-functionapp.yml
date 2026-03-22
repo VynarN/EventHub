@@ -1,0 +1,85 @@
+# Function App: build, test, deploy to dev/test after manual approval per environment.
+# Per environment Variables: AZURE_RESOURCE_GROUP, AZURE_KEY_VAULT_NAME (shared with other pipelines),
+# plus AZURE_FUNCTION_APP_NAME (e.g. eh-dev-func — not AZURE_WEBAPI_NAME / AZURE_BFF_WEBAPP_NAME).
+
+name: Function App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "EventHub.FunctionApp/**"
+      - "EventHub.Cosmos/**"
+      - "EventHub.FunctionApp.Tests/**"
+      - ".github/workflows/eventhub-functionapp.yml"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: eventhub-functionapp-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore, test, publish
+        run: |
+          dotnet restore EventHub.FunctionApp/EventHub.FunctionApp.csproj
+          dotnet test EventHub.FunctionApp.Tests/EventHub.FunctionApp.Tests.csproj -c Release --verbosity normal
+          dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -o "${{ github.workspace }}/publish"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: functionapp-publish
+          path: publish/
+
+  deploy:
+    name: Deploy → ${{ matrix.environment }} (approval)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test]
+    environment: ${{ matrix.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: functionapp-publish
+          path: publish
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Zip release
+        run: (cd publish && zip -r "$GITHUB_WORKSPACE/func.zip" .)
+
+      - name: Deploy to Function App
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_FUNCTION_APP_NAME }}" \
+            --src func.zip
+
+      - name: Apply app settings (Key Vault references)
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          APP: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          VAULT: ${{ vars.AZURE_KEY_VAULT_NAME }}
+        run: bash .github/scripts/apply-functionapp-kv-settings.sh "$RG" "$APP" "$VAULT"

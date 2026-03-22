@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="8.0.0" />
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <Target Name="CopyAngularBrowserToWwwroot"
+          BeforeTargets="BeforeBuild"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\eventhub-spa\dist\eventhub-spa\browser\index.html')">
+    <ItemGroup>
+      <_SpaBrowserFiles Include="$(MSBuildThisFileDirectory)..\eventhub-spa\dist\eventhub-spa\browser\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_SpaBrowserFiles)"
+          DestinationFolder="$(MSBuildThisFileDirectory)wwwroot\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
