@@ -35,7 +35,7 @@ jobs:
           dotnet restore EventHub.FunctionApp/EventHub.FunctionApp.csproj
           dotnet test EventHub.FunctionApp.Tests/EventHub.FunctionApp.Tests.csproj -c Release --verbosity normal
           # Windows Function App: must publish win-x64 from Linux agents or the host loads 0 functions (wrong apphost/native deps).
-          dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -r win-x64 --self-contained false -o "${{ github.workspace }}/publish"
+          dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -o "${{ github.workspace }}/publish"
 
       - uses: actions/upload-artifact@v4
         with:
