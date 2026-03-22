@@ -34,6 +34,8 @@ resource "azurerm_windows_function_app" "main" {
     "FUNCTIONS_WORKER_RUNTIME" = "dotnet-isolated"
     # Trigger uses Connection = "ServiceBusConnection" — must match this setting name.
     "ServiceBusConnection" = var.service_bus_connection_string
+    # Some host/scale paths still read this name; keep in sync with ServiceBusConnection.
+    "AzureWebJobsServiceBus" = var.service_bus_connection_string
     "CosmosDb__ConnectionString" = var.cosmos_db_connection_string
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string
     "WEBSITE_VNET_ROUTE_ALL"                = "1"
