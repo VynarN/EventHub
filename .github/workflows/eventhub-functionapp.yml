@@ -33,14 +33,16 @@ jobs:
       - name: Restore, test, publish
         run: |
           dotnet restore EventHub.FunctionApp/EventHub.FunctionApp.csproj
-          dotnet test EventHub.FunctionApp.Tests/EventHub.FunctionApp.Tests.csproj -c Release --verbosity normal
-          # Windows Function App: must publish win-x64 from Linux agents or the host loads 0 functions (wrong apphost/native deps).
+          dotnet test EventHub.FunctionApp.Tests/EventHub.FunctionApp.Tests.csproj -c Release --verbosity normal 
           dotnet publish EventHub.FunctionApp/EventHub.FunctionApp.csproj -c Release -o "${{ github.workspace }}/publish"
+          
+      - name: Zip publish output
+        run: (cd "${{ github.workspace }}/publish" && zip -r "${{ github.workspace }}/func.zip" .)
 
       - uses: actions/upload-artifact@v4
         with:
           name: functionapp-publish
-          path: publish/
+          path: func.zip
 
   deploy:
     name: Deploy → ${{ matrix.environment }} (approval)
@@ -60,7 +62,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: functionapp-publish
-          path: publish
+          path: ${{ github.workspace }}
 
       - uses: azure/login@v2
         with:
@@ -68,15 +70,12 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      - name: Zip release
-        run: (cd publish && zip -r "$GITHUB_WORKSPACE/func.zip" .)
-
       - name: Deploy to Function App
-        run: |
-          az functionapp deployment source config-zip \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --name "${{ vars.AZURE_FUNCTION_APP_NAME }}" \
-            --src func.zip
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          package: func.zip
+          # No publish-profile: azure/login@v2 above provides OIDC credentials.
 
       # win-x64 zip + 32-bit worker = worker fails to start (0 functions). Terraform also sets this; enforce after deploy.
       - name: Use 64-bit worker process
