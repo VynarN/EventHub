@@ -218,13 +218,21 @@ resource "azurerm_key_vault_access_policy" "web_api" {
 
 # BFF App Service
 module "bff_app_service" {
-  source                        = "../../modules/app_service_bff"
-  name                          = "eh-${var.environment}-bff"
-  location                      = module.resource_group.location
-  resource_group_name           = module.resource_group.name
-  app_service_plan_name         = "eh-${var.environment}-asp-bff"
-  vnet_subnet_id                = module.app_subnet.id
-  web_api_base_url              = "https://${module.web_api_app_service.default_host_name}"
+  source                                 = "../../modules/app_service_bff"
+  name                                   = "eh-${var.environment}-bff"
+  location                               = module.resource_group.location
+  resource_group_name                    = module.resource_group.name
+  app_service_plan_name                  = "eh-${var.environment}-asp-bff"
+  vnet_subnet_id                         = module.app_subnet.id
+  web_api_base_url                       = "https://${module.web_api_app_service.default_host_name}"
+  environment_name                       = local.aspnetcore_environment
+  application_insights_connection_string = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.application_insights_connection_string.versionless_id})"
+  app_service_plan_sku_tier              = "Basic"
+  app_service_plan_sku_size              = "B1"
+
+  depends_on = [
+    azurerm_key_vault_secret.application_insights_connection_string,
+  ]
 }
 
 resource "azurerm_key_vault_access_policy" "bff" {
